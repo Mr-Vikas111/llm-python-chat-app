@@ -201,9 +201,9 @@ def generate_answer_stream(
     use_history: bool = True,
 ):
     """
-    Generate an answer using the LLM with streaming output (word-by-word).
+    Generate an answer using the LLM with word-by-word streaming output.
     
-    Yields chunks of the response as they are generated, similar to ChatGPT.
+    Yields individual words of the response as they are generated, similar to ChatGPT.
     
     Args:
         question: The user's question
@@ -212,28 +212,76 @@ def generate_answer_stream(
         use_history: Whether to include chat history in the prompt
     
     Yields:
-        String chunks of the generated answer
+        Individual words (or spaces) of the generated answer
     """
     settings = get_settings()
     context = build_context(chunks)
 
     if not settings.use_llm:
-        yield "LLM disabled (USE_LLM=false). Retrieved context:\n\n"
-        yield context if context else "No relevant context found."
+        text = "LLM disabled (USE_LLM=false). Retrieved context:\n\n"
+        text += context if context else "No relevant context found."
+        for word in _split_into_words(text):
+            yield word
         return
 
     try:
         chat_model = get_chat_model()
         messages = _build_messages(question, chunks, chat_history, use_history)
         
-        # Stream the response
+        # Stream the response word by word
+        buffer = ""
         for chunk in chat_model.stream(messages):
             content = getattr(chunk, "content", "")
             if content:
-                yield content
+                buffer += content
+                # Yield complete words and spaces
+                while True:
+                    # Find complete words
+                    space_idx = buffer.find(" ")
+                    newline_idx = buffer.find("\n")
+                    
+                    if space_idx == -1 and newline_idx == -1:
+                        # No space or newline, keep buffering
+                        break
+                    
+                    # Find the nearest separator
+                    next_sep = space_idx if space_idx != -1 else newline_idx
+                    if newline_idx != -1 and newline_idx < space_idx:
+                        next_sep = newline_idx
+                    
+                    # Yield word with separator
+                    word = buffer[:next_sep]
+                    separator = buffer[next_sep]
+                    buffer = buffer[next_sep + 1:]
+                    
+                    yield word + separator
+        
+        # Yield remaining buffer
+        if buffer:
+            yield buffer
 
     except Exception as e:
         yield f"Error generating answer: {str(e)}"
+
+
+def _split_into_words(text: str):
+    """
+    Split text into words and preserve spaces/newlines.
+    
+    Args:
+        text: Text to split
+        
+    Yields:
+        Individual words with their trailing spaces/newlines
+    """
+    buffer = ""
+    for char in text:
+        buffer += char
+        if char in (" ", "\n", "\t"):
+            yield buffer
+            buffer = ""
+    if buffer:
+        yield buffer
 
 
 def generate_answer(
