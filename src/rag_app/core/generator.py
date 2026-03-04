@@ -95,13 +95,34 @@ def get_chat_model():
 
     try:
         from langchain_community.chat_models import ChatOllama
+        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
         from langchain_openai import ChatOpenAI
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
             "LangChain dependencies are missing. Install with: pip install -e .[dev]"
         )
 
-    if settings.llm_provider.lower() == "ollama":
+    provider = settings.llm_provider.lower()
+    print("provider ->> ",provider)
+    if provider == "huggingface":
+        print("Using HuggingFace model for LLM provider.")
+        # Use token if provided for authenticated access
+        hf_kwargs = {
+            "model_id": settings.hf_model_id,
+            "task": settings.hf_task,
+            "pipeline_kwargs": {
+                "temperature": settings.hf_temperature,
+                "max_new_tokens": settings.hf_max_new_tokens,
+            },
+        }
+        if settings.hf_token:
+            hf_kwargs["model_kwargs"] = {"token": settings.hf_token}
+        
+        pipeline_llm = HuggingFacePipeline.from_model_id(**hf_kwargs)
+        return ChatHuggingFace(llm=pipeline_llm)
+
+    if provider == "ollama":
+        print("Using Ollama model for LLM provider.")
         return ChatOllama(
             model=settings.ollama_model,
             base_url=settings.ollama_base_url,
@@ -111,6 +132,7 @@ def get_chat_model():
     if not settings.openai_api_key:
         raise ValueError("OPENAI_API_KEY is missing. Add it to your .env file.")
 
+    print("Using OpenAI model for LLM provider.")
     return ChatOpenAI(
         model=settings.openai_model,
         api_key=settings.openai_api_key,

@@ -60,12 +60,47 @@ Set in `.env`:
 Optional custom endpoint:
 - `OPENAI_BASE_URL=https://api.openai.com/v1`
 
+## Embeddings Provider
+
+Set embedding backend in `.env`:
+- `EMBEDDING_PROVIDER=huggingface` (recommended default)
+- `EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2`
+
+OpenAI embeddings option:
+- `EMBEDDING_PROVIDER=openai`
+- `EMBEDDING_MODEL=text-embedding-3-small`
+- `OPENAI_API_KEY=your_key_here`
+
 ## Ollama (Optional)
 
 If you want local inference instead:
 - `LLM_PROVIDER=ollama`
 - `OLLAMA_MODEL=llama3.2:3b`
 - `OLLAMA_BASE_URL=http://localhost:11434`
+
+## Hugging Face (Optional)
+
+If you want local Hugging Face generation instead:
+- `LLM_PROVIDER=huggingface`
+- `HF_MODEL_ID=TinyLlama/TinyLlama-1.1B-Chat-v1.0`
+- `HF_TASK=text-generation`
+- `HF_TEMPERATURE=0.5`
+- `HF_MAX_NEW_TOKENS=512`
+- `HF_TOKEN=your_hf_token_here` (optional but recommended)
+
+This uses LangChain's `HuggingFacePipeline` wrapped by `ChatHuggingFace` for response generation.
+
+**Getting HF Token (Recommended):**
+1. Create account at https://huggingface.co/
+2. Go to https://huggingface.co/settings/tokens
+3. Create a new "Read" token
+4. Add it to `.env` as `HF_TOKEN=hf_xxxxxxxxxxxx`
+
+Benefits of using HF_TOKEN:
+- Higher rate limits for model downloads
+- Faster download speeds
+- Access to gated models (if you have permission)
+- No unauthenticated request warnings
 
 ## Dev Commands
 

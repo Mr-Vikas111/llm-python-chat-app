@@ -17,8 +17,9 @@ class Settings(BaseSettings):
     vector_db_dir: Path = Field(default=Path("data/chroma"), alias="VECTOR_DB_DIR")
 
     collection_name: str = Field(default="rag_documents", alias="COLLECTION_NAME")
+    embedding_provider: str = Field(default="huggingface", alias="EMBEDDING_PROVIDER")
     embedding_model: str = Field(
-        default="text-embedding-3-small", alias="EMBEDDING_MODEL"
+        default="sentence-transformers/all-MiniLM-L6-v2", alias="EMBEDDING_MODEL"
     )
 
     top_k: int = Field(default=4, alias="TOP_K")
@@ -33,7 +34,7 @@ class Settings(BaseSettings):
     # Chat history settings
     use_history: bool = Field(default=True, alias="USE_HISTORY")
 
-    llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")
+    llm_provider: str = Field(default="huggingface", alias="LLM_PROVIDER")
     use_llm: bool = Field(default=False, alias="USE_LLM")
 
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
@@ -42,6 +43,14 @@ class Settings(BaseSettings):
 
     ollama_model: str = Field(default="llama3.2:3b", alias="OLLAMA_MODEL")
     ollama_base_url: str = Field(default="http://localhost:11434", alias="OLLAMA_BASE_URL")
+
+    hf_model_id: str = Field(
+        default="TinyLlama/TinyLlama-1.1B-Chat-v1.0", alias="HF_MODEL_ID"
+    )
+    hf_task: str = Field(default="text-generation", alias="HF_TASK")
+    hf_temperature: float = Field(default=0.5, alias="HF_TEMPERATURE")
+    hf_max_new_tokens: int = Field(default=512, alias="HF_MAX_NEW_TOKENS")
+    hf_token: str = Field(default="", alias="HF_TOKEN")
 
 
 @lru_cache(maxsize=1)
