@@ -8,6 +8,13 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import uuid
+from pathlib import Path
+import sys
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+SRC_DIR = ROOT_DIR / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
 from rag_app.core.chat_history import ChatHistory
 from rag_app.core.generator import generate_answer_stream

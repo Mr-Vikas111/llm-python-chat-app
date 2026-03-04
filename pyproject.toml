@@ -41,6 +41,13 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.poetry]
+name = "rag-db-model"
+version = "0.1.0"
+description = "Production-ready starter for a Retrieval-Augmented Generation app"
+readme = "README.md"
+packages = [{ include = "rag_app", from = "src" }]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 addopts = "-q"
