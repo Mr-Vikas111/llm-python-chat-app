@@ -106,17 +106,24 @@ def get_chat_model():
     print("provider ->> ",provider)
     if provider == "huggingface":
         print("Using HuggingFace model for LLM provider.")
+        import torch
+        
+        # Build model_kwargs with dtype handling for BFloat16 models
+        model_kwargs = {
+            "token": settings.hf_token,
+            "torch_dtype": torch.float32,  # Force float32 to avoid dtype mismatches
+        }
+        
         # Use token if provided for authenticated access
         hf_kwargs = {
             "model_id": settings.hf_model_id,
             "task": settings.hf_task,
+            "model_kwargs": model_kwargs,
             "pipeline_kwargs": {
                 "temperature": settings.hf_temperature,
                 "max_new_tokens": settings.hf_max_new_tokens,
             },
         }
-        if settings.hf_token:
-            hf_kwargs["model_kwargs"] = {"token": settings.hf_token}
         
         pipeline_llm = HuggingFacePipeline.from_model_id(**hf_kwargs)
         return ChatHuggingFace(llm=pipeline_llm)
