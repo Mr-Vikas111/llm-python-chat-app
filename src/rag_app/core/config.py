@@ -1,8 +1,27 @@
 from functools import lru_cache
 from pathlib import Path
+import os
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _get_hf_token() -> str:
+    """Get HF_TOKEN from environment or Streamlit secrets if available."""
+    # First check environment variables
+    token = os.environ.get("HF_TOKEN", "")
+    
+    # If not in environment, try Streamlit secrets
+    if not token:
+        try:
+            import streamlit as st
+            if hasattr(st, "secrets") and "HF_TOKEN" in st.secrets:
+                token = st.secrets["HF_TOKEN"]
+        except (ImportError, AttributeError, RuntimeError):
+            # Streamlit not available or not in Streamlit context
+            pass
+    
+    return token
 
 
 class Settings(BaseSettings):
@@ -51,7 +70,7 @@ class Settings(BaseSettings):
     hf_task: str = Field(default="text-generation", alias="HF_TASK")
     hf_temperature: float = Field(default=0.5, alias="HF_TEMPERATURE")
     hf_max_new_tokens: int = Field(default=512, alias="HF_MAX_NEW_TOKENS")
-    hf_token: str = Field(default="", alias="HF_TOKEN")
+    hf_token: str = Field(default_factory=_get_hf_token, alias="HF_TOKEN")
     hf_use_api: bool = Field(default=True, alias="HF_USE_API")  # Use HuggingFace Inference API
     hf_api_type: str = Field(default="serverless_inference_api", alias="HF_API_TYPE")  # serverless_inference_api or text_generation
 
