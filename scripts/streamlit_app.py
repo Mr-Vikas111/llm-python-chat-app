@@ -10,11 +10,27 @@ from dataclasses import dataclass
 import uuid
 from pathlib import Path
 import sys
+import os
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+
+
+def _load_streamlit_secrets_into_env() -> None:
+    """Populate os.environ from Streamlit secrets when running on Streamlit Cloud."""
+    try:
+        for key in st.secrets:
+            value = st.secrets[key]
+            if isinstance(value, (str, int, float, bool)) and key not in os.environ:
+                os.environ[key] = str(value)
+    except Exception:
+        # No secrets configured (or local run without secrets.toml)
+        pass
+
+
+_load_streamlit_secrets_into_env()
 
 from rag_app.core.chat_history import ChatHistory
 from rag_app.core.generator import generate_answer_stream

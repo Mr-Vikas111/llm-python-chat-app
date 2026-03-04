@@ -108,3 +108,19 @@ Benefits of using HF_TOKEN:
 - `make test` → run tests
 - `make run` → run API
 - `make ui` → run Streamlit chat UI
+
+## Streamlit Cloud Deployment Notes
+
+When deploying on Streamlit Cloud, set runtime values in app **Secrets** (Settings → Secrets), for example:
+
+```toml
+USE_LLM = "true"
+LLM_PROVIDER = "huggingface"
+HF_MODEL_ID = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+HF_TOKEN = "hf_xxx"
+
+EMBEDDING_PROVIDER = "huggingface"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+```
+
+If `USE_LLM` is not set correctly, the app may return: "LLM disabled (USE_LLM=false)".

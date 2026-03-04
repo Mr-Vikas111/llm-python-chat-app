@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     use_history: bool = Field(default=True, alias="USE_HISTORY")
 
     llm_provider: str = Field(default="huggingface", alias="LLM_PROVIDER")
-    use_llm: bool = Field(default=False, alias="USE_LLM")
+    use_llm: bool = Field(default=True, alias="USE_LLM")
 
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
