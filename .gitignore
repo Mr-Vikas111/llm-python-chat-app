@@ -1,0 +1,79 @@
+# -----------------------------
+# Python bytecode / cache
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# -----------------------------
+# Virtual environments
+# -----------------------------
+.venv/
+venv/
+env/
+
+# -----------------------------
+# Build / packaging artifacts
+# -----------------------------
+build/
+dist/
+site/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# -----------------------------
+# Test, lint, type-check caches
+# -----------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# -----------------------------
+# Jupyter / notebooks
+# -----------------------------
+.ipynb_checkpoints/
+
+# -----------------------------
+# Environment & secrets
+# -----------------------------
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# -----------------------------
+# Local data artifacts
+# -----------------------------
+# Chroma vector DB (generated locally)
+data/chroma/**
+!data/chroma/.gitkeep
+
+# Raw/local documents (often private)
+data/raw/**
+!data/raw/.gitkeep
+
+# -----------------------------
+# Logs / temp
+# -----------------------------
+*.log
+*.tmp
+
+# -----------------------------
+# IDE / editor
+# -----------------------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+Thumbs.db
