@@ -557,22 +557,26 @@ class StreamlitUI:
             with st.spinner("Thinking..."):
                 chunks = self.engine.retrieve_context(question, session.history)
             
-            # Stream the answer
-            answer = st.write_stream(
-                self.engine.generate_answer(question, chunks, session.history)
-            )
+            # Collect and display the full answer (non-streaming)
+            with st.spinner("Generating response..."):
+                answer_chunks = []
+                for chunk in self.engine.generate_answer(question, chunks, session.history):
+                    answer_chunks.append(chunk)
+                answer = "".join(answer_chunks)
+            
+            # Display complete answer at once
+            st.markdown(answer)
             
             # Format sources (kept commented as in original)
-            # sources = self.engine.format_sources(chunks)
-            # if sources:
-            #     with st.expander("📚 Sources"):
-            #         for source in sources:
-            #             st.markdown(f"- {source}")
+            sources = self.engine.format_sources(chunks)
+            if sources:
+                with st.expander("📚 Sources"):
+                    for source in sources:
+                        st.markdown(f"- {source}")
         
         # Add assistant message to history
         session.history.add_assistant_message(answer)
         session.update_timestamp()
-        
         return True
     
     def export_chat(self, session: ChatSession):
