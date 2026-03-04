@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = Field(default="http://localhost:11434", alias="OLLAMA_BASE_URL")
 
     hf_model_id: str = Field(
-        default="TinyLlama/TinyLlama-1.1B-Chat-v1.0", alias="HF_MODEL_ID"
+        default="deepseek-ai/DeepSeek-R1", alias="HF_MODEL_ID"
     )
     hf_task: str = Field(default="text-generation", alias="HF_TASK")
     hf_temperature: float = Field(default=0.5, alias="HF_TEMPERATURE")
