@@ -108,25 +108,33 @@ def get_chat_model():
         print("Using HuggingFace model for LLM provider.")
         import torch
         
-        # Build model_kwargs with dtype handling for BFloat16 models
-        model_kwargs = {
-            "token": settings.hf_token,
-            "torch_dtype": torch.float32,  # Force float32 to avoid dtype mismatches
-        }
-        
-        # Use token if provided for authenticated access
-        hf_kwargs = {
-            "model_id": settings.hf_model_id,
-            "task": settings.hf_task,
-            "model_kwargs": model_kwargs,
-            "pipeline_kwargs": {
-                "temperature": settings.hf_temperature,
-                "max_new_tokens": settings.hf_max_new_tokens,
-            },
-        }
-        
-        pipeline_llm = HuggingFacePipeline.from_model_id(**hf_kwargs)
-        return ChatHuggingFace(llm=pipeline_llm)
+        try:
+            # Build model_kwargs with dtype handling for BFloat16 models
+            model_kwargs = {
+                "torch_dtype": torch.float32,  # Force float32 to avoid dtype mismatches
+                "low_cpu_mem_usage": True,    # Enable memory optimization
+            }
+            
+            if settings.hf_token:
+                model_kwargs["token"] = settings.hf_token
+            
+            # Use token if provided for authenticated access
+            hf_kwargs = {
+                "model_id": settings.hf_model_id,
+                "task": settings.hf_task,
+                "model_kwargs": model_kwargs,
+                "pipeline_kwargs": {
+                    "temperature": settings.hf_temperature,
+                    "max_new_tokens": settings.hf_max_new_tokens,
+                },
+            }
+            
+            print(f"Loading model: {settings.hf_model_id}")
+            pipeline_llm = HuggingFacePipeline.from_model_id(**hf_kwargs)
+            return ChatHuggingFace(llm=pipeline_llm)
+        except Exception as e:
+            print(f"Error loading HuggingFace model: {e}")
+            raise
 
     if provider == "ollama":
         print("Using Ollama model for LLM provider.")
