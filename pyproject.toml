@@ -53,6 +53,11 @@ description = "Production-ready starter for a Retrieval-Augmented Generation app
 readme = "README.md"
 packages = [{ include = "rag_app", from = "src" }]
 
+# Environment Variables
+# HF_TOKEN: Hugging Face API token for authenticated model access
+#   Get your token from: https://huggingface.co/settings/tokens
+#   This enables access to gated models and higher rate limits
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 addopts = "-q"
