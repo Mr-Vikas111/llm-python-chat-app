@@ -95,7 +95,7 @@ def get_chat_model():
 
     try:
         from langchain_community.chat_models import ChatOllama
-        from langchain_huggingface import ChatHuggingFace, HuggingFacePipeline
+        from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
         from langchain_openai import ChatOpenAI
     except ModuleNotFoundError:
         raise ModuleNotFoundError(
@@ -103,37 +103,29 @@ def get_chat_model():
         )
 
     provider = settings.llm_provider.lower()
-    print("provider ->> ",provider)
+    print(f"LLM Provider: {provider}")
     if provider == "huggingface":
-        print("Using HuggingFace model for LLM provider.")
-        import torch
+        print(f"Using HuggingFace Inference API: {settings.hf_model_id}")
         
         try:
-            # Build model_kwargs with dtype handling for BFloat16 models
-            model_kwargs = {
-                "torch_dtype": torch.float32,  # Force float32 to avoid dtype mismatches
-                "low_cpu_mem_usage": True,    # Enable memory optimization
-            }
+            if not settings.hf_token:
+                raise ValueError(
+                    "HF_TOKEN is required for HuggingFace Inference API. "
+                    "Get your token from: https://huggingface.co/settings/tokens"
+                )
             
-            if settings.hf_token:
-                model_kwargs["token"] = settings.hf_token
-            
-            # Use token if provided for authenticated access
-            hf_kwargs = {
-                "model_id": settings.hf_model_id,
-                "task": settings.hf_task,
-                "model_kwargs": model_kwargs,
-                "pipeline_kwargs": {
-                    "temperature": settings.hf_temperature,
-                    "max_new_tokens": settings.hf_max_new_tokens,
-                },
-            }
-            
-            print(f"Loading model: {settings.hf_model_id}")
-            pipeline_llm = HuggingFacePipeline.from_model_id(**hf_kwargs)
-            return ChatHuggingFace(llm=pipeline_llm)
+            # Use HuggingFace Inference API (recommended for Streamlit)
+            # Note: temperature and max_new_tokens must be direct parameters, not in model_kwargs
+            endpoint_llm = HuggingFaceEndpoint(
+                repo_id=settings.hf_model_id,
+                task=settings.hf_task,
+                huggingfacehub_api_token=settings.hf_token,
+                temperature=settings.hf_temperature,
+                max_new_tokens=settings.hf_max_new_tokens,
+            )
+            return ChatHuggingFace(llm=endpoint_llm)
         except Exception as e:
-            print(f"Error loading HuggingFace model: {e}")
+            print(f"Error loading HuggingFace Inference API: {e}")
             raise
 
     if provider == "ollama":

@@ -44,13 +44,16 @@ class Settings(BaseSettings):
     ollama_model: str = Field(default="llama3.2:3b", alias="OLLAMA_MODEL")
     ollama_base_url: str = Field(default="http://localhost:11434", alias="OLLAMA_BASE_URL")
 
+    # HuggingFace Inference API settings
     hf_model_id: str = Field(
-        default="TinyLlama/TinyLlama-1.1B-Chat-v1.0", alias="HF_MODEL_ID"
+        default="meta-llama/Llama-3.1-8B-Instruct", alias="HF_MODEL_ID"
     )
     hf_task: str = Field(default="text-generation", alias="HF_TASK")
     hf_temperature: float = Field(default=0.5, alias="HF_TEMPERATURE")
     hf_max_new_tokens: int = Field(default=512, alias="HF_MAX_NEW_TOKENS")
     hf_token: str = Field(default="", alias="HF_TOKEN")
+    hf_use_api: bool = Field(default=True, alias="HF_USE_API")  # Use HuggingFace Inference API
+    hf_api_type: str = Field(default="serverless_inference_api", alias="HF_API_TYPE")  # serverless_inference_api or text_generation
 
 
 @lru_cache(maxsize=1)
