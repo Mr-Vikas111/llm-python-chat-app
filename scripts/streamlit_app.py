@@ -11,6 +11,8 @@ import uuid
 from pathlib import Path
 import sys
 import os
+import hashlib
+import json
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT_DIR / "src"
@@ -38,6 +40,7 @@ from rag_app.core.retriever import retrieve
 from rag_app.core.config import get_settings
 from rag_app.core.vector_store import get_vector_store
 from rag_app.ingestion.pipeline import ingest_from_raw_data
+from rag_app.ingestion.loaders import SUPPORTED_EXTENSIONS
 
 
 @dataclass
@@ -635,6 +638,76 @@ class ChatApp:
         except Exception:
             return 0
 
+    @staticmethod
+    def _compute_documents_signature() -> str:
+        """Build a stable fingerprint from source document paths, sizes, and mtimes."""
+        settings = get_settings()
+        raw_dir = settings.raw_data_dir
+
+        if not raw_dir.exists():
+            return ""
+
+        hasher = hashlib.sha256()
+        for path in sorted(raw_dir.rglob("*")):
+            if not path.is_file() or path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+                continue
+            try:
+                stat = path.stat()
+            except OSError:
+                continue
+
+            rel_path = path.relative_to(raw_dir).as_posix()
+            hasher.update(rel_path.encode("utf-8"))
+            hasher.update(str(stat.st_size).encode("utf-8"))
+            hasher.update(str(stat.st_mtime_ns).encode("utf-8"))
+
+        return hasher.hexdigest()
+
+    @staticmethod
+    def _ingest_state_path() -> Path:
+        """Path to ingestion state metadata file."""
+        settings = get_settings()
+        return settings.vector_db_dir / ".ingest_state.json"
+
+    def _load_ingest_state(self) -> dict[str, Any]:
+        """Load persisted ingestion metadata if available."""
+        state_path = self._ingest_state_path()
+        if not state_path.exists():
+            return {}
+        try:
+            return json.loads(state_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def _save_ingest_state(self, documents_signature: str, indexed_chunks: int) -> None:
+        """Persist ingestion metadata used to skip unnecessary rebuilds."""
+        state_path = self._ingest_state_path()
+        payload = {
+            "documents_signature": documents_signature,
+            "indexed_chunks": indexed_chunks,
+            "updated_at": datetime.now().isoformat(),
+        }
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _should_reingest(self, indexed_chunks: int, documents_signature: str) -> bool:
+        """Decide whether ingestion is needed based on index availability and file changes."""
+        if indexed_chunks == 0:
+            return True
+
+        if not documents_signature:
+            return False
+
+        state = self._load_ingest_state()
+        saved_signature = state.get("documents_signature")
+
+        # Backfill state for existing healthy indexes to avoid one-time unnecessary rebuild.
+        if not saved_signature:
+            self._save_ingest_state(documents_signature, indexed_chunks)
+            return False
+
+        return saved_signature != documents_signature
+
     def _ensure_knowledge_base_ready(self):
         """Ensure documents are indexed at startup (useful for fresh deployments)."""
         if st.session_state.kb_ready_checked:
@@ -643,7 +716,9 @@ class ChatApp:
         st.session_state.kb_ready_checked = True
 
         indexed_chunks = self._get_indexed_chunk_count()
-        if indexed_chunks > 0:
+        documents_signature = self._compute_documents_signature()
+
+        if not self._should_reingest(indexed_chunks, documents_signature):
             return
 
         with st.spinner("Preparing document context index..."):
@@ -654,6 +729,7 @@ class ChatApp:
                 return
 
         if result.get("indexed", 0) > 0:
+            self._save_ingest_state(documents_signature, int(result["indexed"]))
             st.success(
                 f"Indexed {result['indexed']} chunks from {result['files']} file(s) for document context."
             )
