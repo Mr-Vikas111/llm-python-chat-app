@@ -54,7 +54,6 @@ data/chroma/**
 !data/chroma/.gitkeep
 
 # Raw/local documents (often private)
-data/raw/**
 !data/raw/.gitkeep
 
 # -----------------------------
