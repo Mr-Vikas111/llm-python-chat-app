@@ -36,6 +36,8 @@ from rag_app.core.chat_history import ChatHistory
 from rag_app.core.generator import generate_answer_stream
 from rag_app.core.retriever import retrieve
 from rag_app.core.config import get_settings
+from rag_app.core.vector_store import get_vector_store
+from rag_app.ingestion.pipeline import ingest_from_raw_data
 
 
 @dataclass
@@ -617,6 +619,54 @@ class ChatApp:
         
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = ChatHistory(max_history=self.config.max_history)
+
+        if "kb_ready_checked" not in st.session_state:
+            st.session_state.kb_ready_checked = False
+
+    @staticmethod
+    def _get_indexed_chunk_count() -> int:
+        """Return number of indexed chunks currently stored in Chroma."""
+        try:
+            vector_store = get_vector_store()
+            collection = getattr(vector_store, "_collection", None)
+            if collection is None:
+                return 0
+            return int(collection.count())
+        except Exception:
+            return 0
+
+    def _ensure_knowledge_base_ready(self):
+        """Ensure documents are indexed at startup (useful for fresh deployments)."""
+        if st.session_state.kb_ready_checked:
+            return
+
+        st.session_state.kb_ready_checked = True
+
+        indexed_chunks = self._get_indexed_chunk_count()
+        if indexed_chunks > 0:
+            return
+
+        with st.spinner("Preparing document context index..."):
+            try:
+                result = ingest_from_raw_data()
+            except Exception as exc:
+                st.warning(f"Could not initialize document context: {exc}")
+                return
+
+        if result.get("indexed", 0) > 0:
+            st.success(
+                f"Indexed {result['indexed']} chunks from {result['files']} file(s) for document context."
+            )
+            return
+
+        if result.get("files", 0) == 0:
+            st.warning(
+                "No documents found in data/raw. Upload/commit files there so answers can use your context."
+            )
+        else:
+            st.warning(
+                "Documents were found but no chunks were indexed. Check file contents and ingestion settings."
+            )
     
     def get_current_session(self) -> ChatSession:
         """
@@ -686,6 +736,9 @@ class ChatApp:
         """Main application loop."""
         # Configure page
         self.ui.configure_page()
+
+        # Ensure vector store has indexed data (important for cloud deployment)
+        self._ensure_knowledge_base_ready()
         
         # Get current session
         current_session = self.get_current_session()
